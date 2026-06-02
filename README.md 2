@@ -1,0 +1,533 @@
+#decode labs_tasks 2
+
+import { useState, useEffect, useRef } from "react";
+
+// ─── Iris Dataset (150 samples, 4 features, 3 classes) ────────────────────────
+const RAW_DATA = [
+  [5.1,3.5,1.4,0.2,0],[4.9,3.0,1.4,0.2,0],[4.7,3.2,1.3,0.2,0],[4.6,3.1,1.5,0.2,0],
+  [5.0,3.6,1.4,0.2,0],[5.4,3.9,1.7,0.4,0],[4.6,3.4,1.4,0.3,0],[5.0,3.4,1.5,0.2,0],
+  [4.4,2.9,1.4,0.2,0],[4.9,3.1,1.5,0.1,0],[5.4,3.7,1.5,0.2,0],[4.8,3.4,1.6,0.2,0],
+  [4.8,3.0,1.4,0.1,0],[4.3,3.0,1.1,0.1,0],[5.8,4.0,1.2,0.2,0],[5.7,4.4,1.5,0.4,0],
+  [5.4,3.9,1.3,0.4,0],[5.1,3.5,1.4,0.3,0],[5.7,3.8,1.7,0.3,0],[5.1,3.8,1.5,0.3,0],
+  [5.4,3.4,1.7,0.2,0],[5.1,3.7,1.5,0.4,0],[4.6,3.6,1.0,0.2,0],[5.1,3.3,1.7,0.5,0],
+  [4.8,3.4,1.9,0.2,0],[5.0,3.0,1.6,0.2,0],[5.0,3.4,1.6,0.4,0],[5.2,3.5,1.5,0.2,0],
+  [5.2,3.4,1.4,0.2,0],[4.7,3.2,1.6,0.2,0],[4.8,3.1,1.6,0.2,0],[5.4,3.4,1.5,0.4,0],
+  [5.2,4.1,1.5,0.1,0],[5.5,4.2,1.4,0.2,0],[4.9,3.1,1.5,0.2,0],[5.0,3.2,1.2,0.2,0],
+  [5.5,3.5,1.3,0.2,0],[4.9,3.6,1.4,0.1,0],[4.4,3.0,1.3,0.2,0],[5.1,3.4,1.5,0.2,0],
+  [5.0,3.5,1.3,0.3,0],[4.5,2.3,1.3,0.3,0],[4.4,3.2,1.3,0.2,0],[5.0,3.5,1.6,0.6,0],
+  [5.1,3.8,1.9,0.4,0],[4.8,3.0,1.4,0.3,0],[5.1,3.8,1.6,0.2,0],[4.6,3.2,1.4,0.2,0],
+  [5.3,3.7,1.5,0.2,0],[5.0,3.3,1.4,0.2,0],
+  [7.0,3.2,4.7,1.4,1],[6.4,3.2,4.5,1.5,1],[6.9,3.1,4.9,1.5,1],[5.5,2.3,4.0,1.3,1],
+  [6.5,2.8,4.6,1.5,1],[5.7,2.8,4.5,1.3,1],[6.3,3.3,4.7,1.6,1],[4.9,2.4,3.3,1.0,1],
+  [6.6,2.9,4.6,1.3,1],[5.2,2.7,3.9,1.4,1],[5.0,2.0,3.5,1.0,1],[5.9,3.0,4.2,1.5,1],
+  [6.0,2.2,4.0,1.0,1],[6.1,2.9,4.7,1.4,1],[5.6,2.9,3.6,1.3,1],[6.7,3.1,4.4,1.4,1],
+  [5.6,3.0,4.5,1.5,1],[5.8,2.7,4.1,1.0,1],[6.2,2.2,4.5,1.5,1],[5.6,2.5,3.9,1.1,1],
+  [5.9,3.2,4.8,1.8,1],[6.1,2.8,4.0,1.3,1],[6.3,2.5,4.9,1.5,1],[6.1,2.8,4.7,1.2,1],
+  [6.4,2.9,4.3,1.3,1],[6.6,3.0,4.4,1.4,1],[6.8,2.8,4.8,1.4,1],[6.7,3.0,5.0,1.7,1],
+  [6.0,2.9,4.5,1.5,1],[5.7,2.6,3.5,1.0,1],[5.5,2.4,3.8,1.1,1],[5.5,2.4,3.7,1.0,1],
+  [5.8,2.7,3.9,1.2,1],[6.0,2.7,5.1,1.6,1],[5.4,3.0,4.5,1.5,1],[6.0,3.4,4.5,1.6,1],
+  [6.7,3.1,4.7,1.5,1],[6.3,2.3,4.4,1.3,1],[5.6,3.0,4.1,1.3,1],[5.5,2.5,4.0,1.3,1],
+  [5.5,2.6,4.4,1.2,1],[6.1,3.0,4.6,1.4,1],[5.8,2.6,4.0,1.2,1],[5.0,2.3,3.3,1.0,1],
+  [5.6,2.7,4.2,1.3,1],[5.7,3.0,4.2,1.2,1],[5.7,2.9,4.2,1.3,1],[6.2,2.9,4.3,1.3,1],
+  [5.1,2.5,3.0,1.1,1],[5.7,2.8,4.1,1.3,1],
+  [6.3,3.3,6.0,2.5,2],[5.8,2.7,5.1,1.9,2],[7.1,3.0,5.9,2.1,2],[6.3,2.9,5.6,1.8,2],
+  [6.5,3.0,5.8,2.2,2],[7.6,3.0,6.6,2.1,2],[4.9,2.5,4.5,1.7,2],[7.3,2.9,6.3,1.8,2],
+  [6.7,2.5,5.8,1.8,2],[7.2,3.6,6.1,2.5,2],[6.5,3.2,5.1,2.0,2],[6.4,2.7,5.3,1.9,2],
+  [6.8,3.0,5.5,2.1,2],[5.7,2.5,5.0,2.0,2],[5.8,2.8,5.1,2.4,2],[6.4,3.2,5.3,2.3,2],
+  [6.5,3.0,5.5,1.8,2],[7.7,3.8,6.7,2.2,2],[7.7,2.6,6.9,2.3,2],[6.0,2.2,5.0,1.5,2],
+  [6.9,3.2,5.7,2.3,2],[5.6,2.8,4.9,2.0,2],[7.7,2.8,6.7,2.0,2],[6.3,2.7,4.9,1.8,2],
+  [6.7,3.3,5.7,2.1,2],[7.2,3.2,6.0,1.8,2],[6.2,2.8,4.8,1.8,2],[6.1,3.0,4.9,1.8,2],
+  [6.4,2.8,5.6,2.1,2],[7.2,3.0,5.8,1.6,2],[7.4,2.8,6.1,1.9,2],[7.9,3.8,6.4,2.0,2],
+  [6.4,2.8,5.6,2.2,2],[6.3,2.8,5.1,1.5,2],[6.1,2.6,5.6,1.4,2],[7.7,3.0,6.1,2.3,2],
+  [6.3,3.4,5.6,2.4,2],[6.4,3.1,5.5,1.8,2],[6.0,3.0,4.8,1.8,2],[6.9,3.1,5.4,2.1,2],
+  [6.7,3.1,5.6,2.4,2],[6.9,3.1,5.1,2.3,2],[5.8,2.7,5.1,1.9,2],[6.8,3.2,5.9,2.3,2],
+  [6.7,3.3,5.7,2.5,2],[6.7,3.0,5.2,2.3,2],[6.3,2.5,5.0,1.9,2],[6.5,3.0,5.2,2.0,2],
+  [6.2,3.4,5.4,2.3,2],[5.9,3.0,5.1,1.8,2],
+];
+
+const CLASS_NAMES = ["Setosa", "Versicolor", "Virginica"];
+const CLASS_COLORS = ["#00d4aa", "#ff6b35", "#7b61ff"];
+const FEATURE_NAMES = ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"];
+
+// ─── ML Utilities ─────────────────────────────────────────────────────────────
+function shuffle(arr, seed = 42) {
+  const a = [...arr];
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    const j = Math.abs(s) % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function standardScale(data) {
+  const n = data[0].length;
+  const means = Array(n).fill(0);
+  const stds = Array(n).fill(0);
+  data.forEach(row => row.forEach((v, i) => (means[i] += v)));
+  means.forEach((_, i) => (means[i] /= data.length));
+  data.forEach(row => row.forEach((v, i) => (stds[i] += (v - means[i]) ** 2)));
+  stds.forEach((_, i) => (stds[i] = Math.sqrt(stds[i] / data.length)));
+  return { scaled: data.map(row => row.map((v, i) => (v - means[i]) / stds[i])), means, stds };
+}
+
+function euclidean(a, b) {
+  return Math.sqrt(a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0));
+}
+
+function knnPredict(trainX, trainY, testX, k) {
+  return testX.map(point => {
+    const dists = trainX.map((tr, i) => ({ d: euclidean(point, tr), label: trainY[i] }));
+    dists.sort((a, b) => a.d - b.d);
+    const neighbors = dists.slice(0, k);
+    const votes = [0, 0, 0];
+    neighbors.forEach(n => votes[n.label]++);
+    return votes.indexOf(Math.max(...votes));
+  });
+}
+
+function f1Score(y_true, y_pred, numClasses) {
+  const scores = [];
+  for (let c = 0; c < numClasses; c++) {
+    const tp = y_true.filter((v, i) => v === c && y_pred[i] === c).length;
+    const fp = y_pred.filter((v, i) => v === c && y_true[i] !== c).length;
+    const fn = y_true.filter((v, i) => v === c && y_pred[i] !== c).length;
+    const p = tp + fp === 0 ? 0 : tp / (tp + fp);
+    const r = tp + fn === 0 ? 0 : tp / (tp + fn);
+    scores.push(p + r === 0 ? 0 : (2 * p * r) / (p + r));
+  }
+  return scores.reduce((a, b) => a + b, 0) / numClasses;
+}
+
+function confusionMatrix(y_true, y_pred, n) {
+  const m = Array.from({ length: n }, () => Array(n).fill(0));
+  y_true.forEach((v, i) => m[v][y_pred[i]]++);
+  return m;
+}
+
+function runPipeline(k, testRatio, seed) {
+  const shuffled = shuffle(RAW_DATA, seed);
+  const features = shuffled.map(r => r.slice(0, 4));
+  const labels = shuffled.map(r => r[4]);
+  const splitIdx = Math.floor(features.length * (1 - testRatio));
+  const trainX_raw = features.slice(0, splitIdx);
+  const testX_raw = features.slice(splitIdx);
+  const trainY = labels.slice(0, splitIdx);
+  const testY = labels.slice(splitIdx);
+  const { scaled: trainX, means, stds } = standardScale(trainX_raw);
+  const testX = testX_raw.map(row => row.map((v, i) => (v - means[i]) / stds[i]));
+  const predictions = knnPredict(trainX, trainY, testX, k);
+  const accuracy = predictions.filter((p, i) => p === testY[i]).length / testY.length;
+  const f1 = f1Score(testY, predictions, 3);
+  const cm = confusionMatrix(testY, predictions, 3);
+  return { accuracy, f1, cm, testY, predictions, trainSize: splitIdx, testSize: testX.length };
+}
+
+// ─── Components ───────────────────────────────────────────────────────────────
+function AnimatedNumber({ value, decimals = 1, suffix = "%" }) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const end = value;
+    const duration = 800;
+    const step = 16;
+    const increment = (end - start) / (duration / step);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) { setDisplay(end); clearInterval(timer); }
+      else setDisplay(start);
+    }, step);
+    return () => clearInterval(timer);
+  }, [value]);
+  return <span>{(display * (suffix === "%" ? 100 : 1)).toFixed(decimals)}{suffix}</span>;
+}
+
+function ConfusionMatrixViz({ cm }) {
+  const max = Math.max(...cm.flat());
+  return (
+    <div style={{ display: "grid", gap: "2px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "80px repeat(3, 1fr)", gap: "2px", marginBottom: "4px" }}>
+        <div />
+        {CLASS_NAMES.map((n, i) => (
+          <div key={i} style={{ textAlign: "center", fontSize: "11px", color: CLASS_COLORS[i], fontWeight: 700, letterSpacing: "0.05em", padding: "4px 0" }}>
+            {n.slice(0, 3).toUpperCase()}
+          </div>
+        ))}
+      </div>
+      {cm.map((row, i) => (
+        <div key={i} style={{ display: "grid", gridTemplateColumns: "80px repeat(3, 1fr)", gap: "2px" }}>
+          <div style={{ display: "flex", alignItems: "center", fontSize: "11px", color: CLASS_COLORS[i], fontWeight: 700, letterSpacing: "0.05em" }}>
+            {CLASS_NAMES[i].slice(0, 3).toUpperCase()}
+          </div>
+          {row.map((val, j) => {
+            const intensity = max > 0 ? val / max : 0;
+            const isCorrect = i === j;
+            return (
+              <div key={j} style={{
+                background: isCorrect
+                  ? `rgba(0, 212, 170, ${0.15 + intensity * 0.7})`
+                  : val > 0 ? `rgba(255, 107, 53, ${0.1 + intensity * 0.6})` : "rgba(255,255,255,0.03)",
+                border: isCorrect ? "1px solid rgba(0,212,170,0.4)" : val > 0 ? "1px solid rgba(255,107,53,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: "6px",
+                padding: "10px 4px",
+                textAlign: "center",
+                fontSize: "18px",
+                fontWeight: 800,
+                color: isCorrect ? "#00d4aa" : val > 0 ? "#ff6b35" : "rgba(255,255,255,0.2)",
+                fontFamily: "'Space Mono', monospace",
+                transition: "all 0.4s ease",
+              }}>
+                {val}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function KValueChart({ results }) {
+  const max = Math.max(...results.map(r => r.acc));
+  const min = Math.min(...results.map(r => r.acc));
+  const h = 80;
+  const w = 260;
+  const pts = results.map((r, i) => {
+    const x = (i / (results.length - 1)) * w;
+    const y = h - ((r.acc - min + 0.01) / (max - min + 0.02)) * h;
+    return { x, y, r };
+  });
+  const optimal = results.reduce((best, r) => r.acc > best.acc ? r : best, results[0]);
+
+  return (
+    <div>
+      <svg width={w + 20} height={h + 30} style={{ overflow: "visible" }}>
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#7b61ff" />
+            <stop offset="100%" stopColor="#00d4aa" />
+          </linearGradient>
+        </defs>
+        <polyline
+          points={pts.map(p => `${p.x + 10},${p.y}`).join(" ")}
+          fill="none" stroke="url(#lineGrad)" strokeWidth="2.5" strokeLinejoin="round"
+        />
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x + 10} cy={p.y} r={results[i].k === optimal.k ? 6 : 3.5}
+              fill={results[i].k === optimal.k ? "#00d4aa" : "#7b61ff"}
+              stroke={results[i].k === optimal.k ? "rgba(0,212,170,0.4)" : "none"}
+              strokeWidth="4"
+            />
+            {results[i].k === optimal.k && (
+              <text x={p.x + 10} y={p.y - 12} textAnchor="middle" fill="#00d4aa" fontSize="9" fontFamily="Space Mono">
+                BEST K={results[i].k}
+              </text>
+            )}
+          </g>
+        ))}
+        {[1, 5, 10, 15, 20].map(k => {
+          const idx = results.findIndex(r => r.k === k);
+          if (idx < 0) return null;
+          const x = (idx / (results.length - 1)) * w + 10;
+          return (
+            <text key={k} x={x} y={h + 22} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="Space Mono">
+              {k}
+            </text>
+          );
+        })}
+        <text x={10 + w / 2} y={h + 32} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="Space Mono">K VALUE</text>
+      </svg>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function IrisKNNApp() {
+  const [k, setK] = useState(5);
+  const [testRatio, setTestRatio] = useState(0.2);
+  const [seed, setSeed] = useState(42);
+  const [result, setResult] = useState(null);
+  const [kChart, setKChart] = useState([]);
+  const [step, setStep] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [activeTab, setActiveTab] = useState("matrix");
+
+  useEffect(() => {
+    // Pre-compute K chart
+    const results = Array.from({ length: 20 }, (_, i) => {
+      const kv = i + 1;
+      const r = runPipeline(kv, testRatio, seed);
+      return { k: kv, acc: r.accuracy, f1: r.f1 };
+    });
+    setKChart(results);
+  }, [testRatio, seed]);
+
+  const handleRun = async () => {
+    setRunning(true);
+    setStep(0);
+    setResult(null);
+    await new Promise(r => setTimeout(r, 400));
+    setStep(1);
+    await new Promise(r => setTimeout(r, 500));
+    setStep(2);
+    await new Promise(r => setTimeout(r, 500));
+    setStep(3);
+    await new Promise(r => setTimeout(r, 500));
+    setStep(4);
+    const res = runPipeline(k, testRatio, seed);
+    setResult(res);
+    setRunning(false);
+  };
+
+  const PIPELINE_STEPS = [
+    { label: "Load Iris Dataset", icon: "◈", desc: "150 samples · 4 features · 3 classes" },
+    { label: "Feature Scaling", icon: "⊞", desc: "StandardScaler: μ=0, σ=1" },
+    { label: "Train/Test Split", icon: "⊟", desc: `${Math.round((1 - testRatio) * 100)}% train · ${Math.round(testRatio * 100)}% test` },
+    { label: "KNN Classification", icon: "⊛", desc: `k=${k} nearest neighbors` },
+    { label: "Evaluate Model", icon: "⊕", desc: "Confusion Matrix · F1 Score" },
+  ];
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0a0a0f",
+      color: "#e8e8f0",
+      fontFamily: "'Space Mono', 'Courier New', monospace",
+      padding: "24px 16px",
+      backgroundImage: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(123,97,255,0.15), transparent)",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+        * { box-sizing: border-box; }
+        input[type=range] { -webkit-appearance: none; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #7b61ff; box-shadow: 0 0 10px rgba(123,97,255,0.6); }
+        .tab-btn { background: none; border: none; cursor: pointer; padding: 8px 16px; border-radius: 6px; font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 0.08em; transition: all 0.2s; }
+        .tab-btn.active { background: rgba(123,97,255,0.2); color: #7b61ff; }
+        .tab-btn:not(.active) { color: rgba(255,255,255,0.3); }
+        .tab-btn:not(.active):hover { color: rgba(255,255,255,0.6); }
+        .run-btn { background: linear-gradient(135deg, #7b61ff, #00d4aa); border: none; color: white; padding: 14px 32px; border-radius: 8px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .run-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(123,97,255,0.4); }
+        .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; }
+        .metric-card { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.06); }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "28px" }}>
+        <div style={{ fontSize: "10px", letterSpacing: "0.25em", color: "#7b61ff", marginBottom: "8px" }}>
+          DECODELABS · PROJECT 2 · BATCH 2026
+        </div>
+        <h1 style={{
+          fontFamily: "'Syne', sans-serif",
+          fontSize: "clamp(22px, 5vw, 36px)",
+          fontWeight: 800,
+          margin: 0,
+          background: "linear-gradient(135deg, #ffffff 30%, #7b61ff 70%, #00d4aa)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          lineHeight: 1.1,
+        }}>
+          Iris KNN Classifier
+        </h1>
+        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "6px", letterSpacing: "0.08em" }}>
+          DATA CLASSIFICATION USING AI · SUPERVISED LEARNING
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="card" style={{ marginBottom: "16px" }}>
+        <div style={{ fontSize: "10px", letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)", marginBottom: "16px" }}>
+          HYPERPARAMETERS
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>K Neighbors</span>
+              <span style={{ fontSize: "13px", color: "#7b61ff", fontWeight: 700 }}>k = {k}</span>
+            </div>
+            <input type="range" min="1" max="20" value={k} onChange={e => setK(+e.target.value)} style={{ width: "100%" }} />
+          </div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>Test Split</span>
+              <span style={{ fontSize: "13px", color: "#00d4aa", fontWeight: 700 }}>{Math.round(testRatio * 100)}%</span>
+            </div>
+            <input type="range" min="0.1" max="0.4" step="0.05" value={testRatio}
+              onChange={e => setTestRatio(+e.target.value)} style={{ width: "100%" }} />
+          </div>
+        </div>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>Random Seed</span>
+            <span style={{ fontSize: "13px", color: "#ff6b35", fontWeight: 700 }}>{seed}</span>
+          </div>
+          <input type="range" min="1" max="200" value={seed} onChange={e => setSeed(+e.target.value)} style={{ width: "100%" }} />
+        </div>
+        <button className="run-btn" onClick={handleRun} disabled={running}>
+          {running ? "▶ TRAINING..." : "▶ RUN PIPELINE"}
+        </button>
+      </div>
+
+      {/* Pipeline Steps */}
+      <div className="card" style={{ marginBottom: "16px" }}>
+        <div style={{ fontSize: "10px", letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)", marginBottom: "16px" }}>
+          PIPELINE STATUS
+        </div>
+        {PIPELINE_STEPS.map((s, i) => {
+          const done = step > i;
+          const active = step === i && running;
+          return (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: "12px",
+              padding: "10px 0",
+              borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.05)" : "none",
+              opacity: step === 0 && !running ? 0.4 : done ? 1 : active ? 1 : 0.35,
+              transition: "all 0.3s",
+            }}>
+              <div style={{
+                width: "32px", height: "32px", borderRadius: "8px",
+                background: done ? "rgba(0,212,170,0.15)" : active ? "rgba(123,97,255,0.2)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${done ? "rgba(0,212,170,0.4)" : active ? "rgba(123,97,255,0.5)" : "rgba(255,255,255,0.08)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "14px", color: done ? "#00d4aa" : active ? "#7b61ff" : "rgba(255,255,255,0.3)",
+                transition: "all 0.3s",
+              }}>
+                {done ? "✓" : s.icon}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "12px", fontWeight: 700, color: done ? "#e8e8f0" : "rgba(255,255,255,0.5)" }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", marginTop: "2px" }}>{s.desc}</div>
+              </div>
+              {active && (
+                <div style={{ width: "16px", height: "16px", border: "2px solid #7b61ff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Results */}
+      {result && (
+        <div style={{ animation: "fadeIn 0.5s ease" }}>
+          <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+          {/* Metrics */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+            {[
+              { label: "ACCURACY", value: result.accuracy, color: "#00d4aa", decimals: 1, suffix: "%" },
+              { label: "F1 SCORE", value: result.f1, color: "#7b61ff", decimals: 3, suffix: "" },
+              { label: "TEST SAMPLES", value: result.testSize, color: "#ff6b35", decimals: 0, suffix: "" },
+            ].map((m, i) => (
+              <div className="metric-card" key={i}>
+                <div style={{ fontSize: "9px", letterSpacing: "0.15em", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>{m.label}</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color: m.color }}>
+                  <AnimatedNumber value={m.value} decimals={m.decimals} suffix={m.suffix} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs */}
+          <div className="card">
+            <div style={{ display: "flex", gap: "4px", marginBottom: "16px", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "12px" }}>
+              {[
+                { id: "matrix", label: "CONF. MATRIX" },
+                { id: "kchart", label: "K ANALYSIS" },
+                { id: "samples", label: "PREDICTIONS" },
+              ].map(t => (
+                <button key={t.id} className={`tab-btn ${activeTab === t.id ? "active" : ""}`}
+                  onClick={() => setActiveTab(t.id)}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === "matrix" && (
+              <div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "12px", letterSpacing: "0.1em" }}>
+                  PREDICTED →  /  ACTUAL ↓
+                </div>
+                <ConfusionMatrixViz cm={result.cm} />
+                <div style={{ marginTop: "16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  {[
+                    { label: "True Positive", color: "#00d4aa", desc: "Correct predictions (diagonal)" },
+                    { label: "False Positive", color: "#ff6b35", desc: "Type I error (false alarm)" },
+                  ].map((item, i) => (
+                    <div key={i} style={{ padding: "8px 10px", borderRadius: "6px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ fontSize: "10px", color: item.color, fontWeight: 700, letterSpacing: "0.1em" }}>{item.label}</div>
+                      <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.3)", marginTop: "2px" }}>{item.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "kchart" && (
+              <div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "12px", letterSpacing: "0.1em" }}>
+                  ACCURACY VS K VALUE (test_ratio={Math.round(testRatio * 100)}%)
+                </div>
+                <KValueChart results={kChart} />
+                <div style={{ marginTop: "12px", fontSize: "10px", color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
+                  <span style={{ color: "#7b61ff" }}>K=1</span> → overfitting (noise sensitivity)<br />
+                  <span style={{ color: "#00d4aa" }}>Optimal K</span> → lowest test error (elbow point)<br />
+                  <span style={{ color: "rgba(255,255,255,0.4)" }}>High K</span> → underfitting (generic predictions)
+                </div>
+              </div>
+            )}
+
+            {activeTab === "samples" && (
+              <div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "12px", letterSpacing: "0.1em" }}>
+                  SAMPLE PREDICTIONS (first 20 test items)
+                </div>
+                <div style={{ display: "grid", gap: "4px" }}>
+                  {result.testY.slice(0, 20).map((actual, i) => {
+                    const pred = result.predictions[i];
+                    const correct = actual === pred;
+                    return (
+                      <div key={i} style={{
+                        display: "grid", gridTemplateColumns: "24px 1fr 1fr 24px",
+                        alignItems: "center", gap: "8px",
+                        padding: "6px 8px", borderRadius: "6px",
+                        background: correct ? "rgba(0,212,170,0.05)" : "rgba(255,107,53,0.08)",
+                        border: `1px solid ${correct ? "rgba(0,212,170,0.15)" : "rgba(255,107,53,0.2)"}`,
+                        fontSize: "10px",
+                      }}>
+                        <div style={{ color: "rgba(255,255,255,0.25)", textAlign: "center" }}>{i + 1}</div>
+                        <div>
+                          <span style={{ color: "rgba(255,255,255,0.4)" }}>ACTUAL: </span>
+                          <span style={{ color: CLASS_COLORS[actual], fontWeight: 700 }}>{CLASS_NAMES[actual]}</span>
+                        </div>
+                        <div>
+                          <span style={{ color: "rgba(255,255,255,0.4)" }}>PRED: </span>
+                          <span style={{ color: CLASS_COLORS[pred], fontWeight: 700 }}>{CLASS_NAMES[pred]}</span>
+                        </div>
+                        <div style={{ textAlign: "center", fontSize: "12px" }}>{correct ? "✓" : "✗"}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!result && !running && (
+        <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.2)", fontSize: "11px", letterSpacing: "0.1em" }}>
+          CONFIGURE PARAMETERS · PRESS RUN PIPELINE
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ textAlign: "center", marginTop: "24px", fontSize: "9px", color: "rgba(255,255,255,0.15)", letterSpacing: "0.15em" }}>
+        DECODELABS INDUSTRIAL TRAINING KIT · BATCH 2026
+      </div>
+    </div>
+  );
+}
